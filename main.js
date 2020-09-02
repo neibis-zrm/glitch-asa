@@ -9,13 +9,49 @@ http.createServer(function(request, response)
 // Discord bot implements
 const discord = require('discord.js');
 const client = new discord.Client();
-const cron = require('node-cron')
-const asa_ch = '712586705189863434'
+const cron = require('node-cron');
+const schedule = require('node-schedule');
+const asa_ch = '712586705189863434';
 
-cron.schedule('0 0 22 * * *', () => {
+var sHour = 22;
+var sMin = 0;
+
+// NUM=値 LEN=桁数
+function zeroPadding(NUM, LEN){
+	return ( Array(LEN).join('0') + NUM ).slice( -LEN );
+}
+
+var morning = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
   const channel = client.channels.cache.get(asa_ch)
+  // console.log(`${sMin} ${sHour}`)
   channel.send(asa_message())
 })
+
+function set_schedule(hour,min){
+  try {
+    sHour = hour - 9
+    if (sHour < 0) {
+      sHour += 24
+    }
+    sMin = min
+    morning.reschedule(`0 ${sMin} ${sHour} * * *`)
+  } 
+  catch (error) {
+    console.log("set_schedule error");
+    return false;
+  }
+  return true;
+}
+
+function show_schedule(){
+
+  hour = sHour + 9
+  if (hour >= 24) {
+    hour -= 24
+  }
+  min = sMin
+  return `${zeroPadding(sHour,2)}:${zeroPadding(min,2)}`
+}
 
 function asa_message(x = null){
   if (x == null) {
@@ -67,7 +103,7 @@ client.on('message', message =>
       message.reply('あさ');
       return;
     }
-    if(message.content.startsWith("!asa-test"))
+    if((message.content.startsWith("!asa")) && (message.content.split(" ")[0] == "!asa"))
     {
       if (message.content.split(" ")[1] == null) {
         message.channel.send(asa_message())
@@ -75,6 +111,39 @@ client.on('message', message =>
       else {
         message.channel.send(asa_message(message.content.split(" ")[1]))      
       }
+    }
+    if(message.content.startsWith("!asa-timer") && (message.content.split(" ")[0] == "!asa-timer"))
+    {
+      if((message.content.split(" ")[1] != null) && (message.content.split(" ")[2] != null)) {
+        hour = message.content.split(" ")[1];
+        min = message.content.split(" ")[2];
+        hour = Number(hour);
+        min = Number(min);
+        if (Number.isInteger(hour) || Number.isInteger(min)) {
+          if ((hour >= 24 ) || ((hour < 0))) {
+            message.channel.send("申し訳ないが存在しない時間を設定するのはNG")
+            return;
+          }
+          if ((min >= 60 ) || ((min < 0))) {
+            message.channel.send("申し訳ないが存在しない時間を設定するのはNG")
+            return;
+          } 
+          if (set_schedule(hour,min)) {
+            message.channel.send("ヨシ！")
+          }
+          else {
+            message.channel.send("おきのどくですが　ぼうけんのしょは　きえてしまいました")
+          }
+        }
+        else{
+          message.channel.send("エラーエラーエラー")
+          return;
+        }
+      }
+    }
+    if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
+    {
+      message.channel.send(`本日のあさは${show_schedule()}です`)
     }
   }
 });
