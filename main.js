@@ -12,11 +12,6 @@ const client = new discord.Client();
 const cron = require('node-cron')
 const asa_ch = '712586705189863434'
 
-cron.schedule('0 * * * * *', () => {
-  const now = new Date();
-  console.log(now)
-})
-
 cron.schedule('0 0 22 * * *', () => {
   const channel = client.channels.cache.get(asa_ch)
   channel.send(asa_message())
