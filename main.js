@@ -50,7 +50,7 @@ function show_schedule(){
     hour -= 24
   }
   min = sMin
-  return `${zeroPadding(sHour,2)}:${zeroPadding(min,2)}`
+  return `${zeroPadding(hour,2)}:${zeroPadding(min,2)}`
 }
 
 function asa_message(x = null){
