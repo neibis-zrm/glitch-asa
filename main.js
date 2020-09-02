@@ -140,6 +140,9 @@ client.on('message', message =>
           return;
         }
       }
+      else {
+        message.channel.send("さてはインチだなオメー")
+      }
     }
     if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
     {
