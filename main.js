@@ -22,6 +22,10 @@ const query_select_ch = 'select id, ch_num from channel order by id;'
 function query_insert_ch(channel_ID){
   return `insert into channel (ch_num) values (${channel_ID});`
 }
+function query_delete_ch(channel_ID){
+  return `delete from channel where ch_num = (${channel_ID});`
+}
+
 
 var sHour = 22;
 var sMin = 0;
@@ -225,7 +229,52 @@ function insert_ch(channel_ID){
                 resolve('True');
               }
             }
-            reject('False')
+            resolve('False')
+          }
+        });
+      }
+    });
+  })
+}
+
+
+// タイマー実行ch設定解除
+function delete_ch(channel_ID){
+
+  const client = new Client({
+    connectionString: dbConnectStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  return new Promise(function(resolve,reject){
+    client.connect(function(err) {
+      if (err) {
+        reject(console.error('could not connect to postgres', err));
+      }
+      else {
+        client.query(query_delete_ch(channel_ID), function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(insert_query)', err));
+          }
+          else {
+            console.log(result);
+          }
+        });
+        client.query(query_select_ch, function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(select_query)', err));
+          }
+          else {
+            for (const data of result.rows) {
+              const id = data.id;
+              const num = data.ch_num;
+              console.log("id:" + id);
+              console.log("name:" + num);
+              if (channel_ID == num) {
+                resolve('False');
+              }
+            }
+            resolve('True')
           }
         });
       }
@@ -286,7 +335,32 @@ client.on('message', message =>
           message.channel.send(select)
         }
       })
-
+    }
+    // タイマー機能:チャンネル設定解除
+    if(message.content.startsWith("!asa-ch-remove"))
+    {
+      select_ch(message.channel.id).then(function(select){
+        console.log(select);
+        if (select == "True") {
+          delete_ch(message.channel.id).then(function(del){
+            if (del == "True") {
+              message.channel.send('ヨシ！')
+            }
+            else if(del == "False") {
+              message.channel.send('誰もお前を愛さない')
+            }
+            else{
+              message.channel.send(del)
+            }
+          });
+        }
+        else if(select == "False") {
+          message.channel.send('しかしなにもおきなかった…')
+        }
+        else {
+          message.channel.send(select)
+        }
+      })
     }
     // タイマー機能:時刻設定
     if(message.content.startsWith("!asa-timer") && (message.content.split(" ")[0] == "!asa-timer"))
