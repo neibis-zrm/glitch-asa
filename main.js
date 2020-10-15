@@ -13,6 +13,16 @@ const cron = require('node-cron');
 const schedule = require('node-schedule');
 const asa_ch = '712586705189863434';
 
+// database implements
+var {Client} = require('pg');
+const dbConnectStr = process.env.DATABASE_URL;
+
+// query
+const query_select_ch = 'select id, ch_num from channel order by id;'
+function query_insert_ch(channel_ID){
+  return `insert into channel (ch_num) values (${channel_ID});`
+}
+
 var sHour = 22;
 var sMin = 0;
 
@@ -89,20 +99,159 @@ function asa_message(x = null){
   }
 }
 
+// データベース接続(ベース)
+function pg_connect(){
+  const client = new Client({
+    connectionString: dbConnectStr,
+    ssl: { rejectUnauthorized: false }
+  });
+  client.connect(function(err) {
+    if (err) {
+      return console.error('could not connect to postgres', err);
+    }
+    else {
+      // クエリを実行
+    }
+  });
+}
+
+// タイマー実行ch取得
+function select_ch(){
+
+  channels = [];
+  const client = new Client({
+    connectionString: dbConnectStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  return new Promise(function(resolve,reject){
+    client.connect(function(err) {
+      if (err) {
+        reject(console.error('could not connect to postgres', err));
+      }
+      else {
+        client.query(query_select_ch, function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(query)', err));
+          }
+          else {
+            for (const data of result.rows) {
+              const id = data.id;
+              const num = data.ch_num;
+              console.log("id:" + id);
+              console.log("name:" + num);
+              channels.push(num);
+            }
+            console.log(channels);
+            resolve(channels);
+          }
+        });
+      }
+    });
+  })
+}
+
+// タイマー実行ch確認
+function select_ch(channel_ID){
+
+  const client = new Client({
+    connectionString: dbConnectStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  return new Promise(function(resolve,reject){
+    client.connect(function(err) {
+      if (err) {
+        reject(console.error('could not connect to postgres', err));
+      }
+      else {
+        // 設定状態を確認
+        client.query(query_select_ch, function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(query)', err));
+          }
+          else {
+            for (const data of result.rows) {
+              const id = data.id;
+              const num = data.ch_num;
+              console.log("id:" + id);
+              console.log("name:" + num);
+              if (channel_ID == num) {
+                resolve('True');
+                return;
+              }
+            }
+            resolve('False');
+          }
+        });
+      }
+    });
+  })
+}
+
+// タイマー実行ch設定
+function insert_ch(channel_ID){
+
+  const client = new Client({
+    connectionString: dbConnectStr,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  return new Promise(function(resolve,reject){
+    client.connect(function(err) {
+      if (err) {
+        reject(console.error('could not connect to postgres', err));
+      }
+      else {
+        client.query(query_insert_ch(channel_ID), function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(insert_query)', err));
+          }
+          else {
+            console.log(result);
+          }
+        });
+        client.query(query_select_ch, function(err, result) {
+          if (err) {
+            reject(console.error('could not connect to postgres(select_query)', err));
+          }
+          else {
+            for (const data of result.rows) {
+              const id = data.id;
+              const num = data.ch_num;
+              console.log("id:" + id);
+              console.log("name:" + num);
+              if (channel_ID == num) {
+                resolve('True');
+              }
+            }
+            reject('False')
+          }
+        });
+      }
+    });
+  })
+}
+
+// botの実行
 client.on('ready', message =>
 {
   client.user.setPresence({ game: { name: 'あさ' } });
 	console.log('bot is ready!');
 });
 
+// メッセージアクション
 client.on('message', message =>
 {
-  if(message.author != client.user) {    
+  // リプライによる反復禁止
+  if(message.author != client.user) {
+    // リプライに反応する 
     if(message.mentions.users.has(client.user.id))
     {
       message.reply('あさ');
       return;
     }
+    // メッセージを表示
     if((message.content.startsWith("!asa")) && (message.content.split(" ")[0] == "!asa"))
     {
       if (message.content.split(" ")[1] == null) {
@@ -112,6 +261,34 @@ client.on('message', message =>
         message.channel.send(asa_message(message.content.split(" ")[1]))      
       }
     }
+    // タイマー機能:チャンネル設定
+    if(message.content.startsWith("!asa-ch-set"))
+    {
+      select_ch(message.channel.id).then(function(select){
+        console.log(select);
+        if (select == "False") {
+          insert_ch(message.channel.id).then(function(insert){
+            if (insert == "True") {
+              message.channel.send('ヨシ！')
+            }
+            else if(insert == "False") {
+              message.channel.send('誰もお前を愛さない')
+            }
+            else{
+              message.channel.send(insert)
+            }
+          });
+        }
+        else if(select == "True") {
+          message.channel.send('しかしなにもおきなかった…')
+        }
+        else {
+          message.channel.send(select)
+        }
+      })
+
+    }
+    // タイマー機能:時刻設定
     if(message.content.startsWith("!asa-timer") && (message.content.split(" ")[0] == "!asa-timer"))
     {
       if((message.content.split(" ")[1] != null) && (message.content.split(" ")[2] != null)) {
@@ -144,6 +321,7 @@ client.on('message', message =>
         message.channel.send("さてはインチだなオメー")
       }
     }
+    // タイマー機能:時刻表示
     if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
     {
       message.channel.send(`本日のあさは${show_schedule()}です`)
