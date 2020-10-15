@@ -11,7 +11,6 @@ const discord = require('discord.js');
 const client = new discord.Client();
 const cron = require('node-cron');
 const schedule = require('node-schedule');
-const asa_ch = '712586705189863434';
 
 // database implements
 var {Client} = require('pg');
@@ -35,10 +34,22 @@ function zeroPadding(NUM, LEN){
 	return ( Array(LEN).join('0') + NUM ).slice( -LEN );
 }
 
+// var morning = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
+//   const channel = client.channels.cache.get(asa_ch)
+//   // console.log(`${sMin} ${sHour}`)
+//   channel.send(asa_message())
+// })
+
 var morning = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
-  const channel = client.channels.cache.get(asa_ch)
-  // console.log(`${sMin} ${sHour}`)
-  channel.send(asa_message())
+
+  channels = []
+  select_ch_all().then(function(ch_list){
+    console.log(ch_list);
+    ch_list.forEach(function(value){
+      channel = client.channels.cache.get(value)
+      channel.send(asa_message())
+    });
+  });
 })
 
 function set_schedule(hour,min){
@@ -120,7 +131,7 @@ function pg_connect(){
 }
 
 // タイマー実行ch取得
-function select_ch(){
+function select_ch_all(){
 
   channels = [];
   const client = new Client({
