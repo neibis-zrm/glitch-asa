@@ -144,7 +144,7 @@ client.on('message', message =>
       }
     }
     // タイマー機能:チャンネル設定
-    if(message.content("!asa-ch-set"))
+    if(message.content.startsWith("!asa-ch-set"))
     {
       query.select_ch(message.channel.id).then(function(select){
         console.log(select);
@@ -170,7 +170,7 @@ client.on('message', message =>
       })
     }
     // タイマー機能:チャンネル設定解除
-    if(message.content("!asa-ch-remove"))
+    if(message.content.startsWith("!asa-ch-remove"))
     {
       query.select_ch(message.channel.id).then(function(select){
         console.log(select);
@@ -259,7 +259,7 @@ client.on('message', message =>
       }
     }
     // タイマー機能:時刻表示
-    if(message.content("!asa-timer-show"))
+    if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
     {
       show_schedule(message.channel.id).then(function(show_timers){
         show_message = ""
