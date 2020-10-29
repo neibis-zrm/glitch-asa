@@ -12,11 +12,12 @@ const client = new discord.Client();
 const cron = require('node-cron');
 const schedule = require('node-schedule');
 
+require('date-utils');
+
 // database implements
 var query = require('./query')
 
-var sHour = 22;
-var sMin = 0;
+var timers = [];
 
 // NUM=値 LEN=桁数
 function zeroPadding(NUM, LEN){
@@ -29,17 +30,35 @@ function zeroPadding(NUM, LEN){
 //   channel.send(asa_message())
 // })
 
-var morning = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
-
+function schedule_function(){
   channels = []
-  select_ch_all().then(function(ch_list){
+
+  var dt = new Date();
+  var formatted = dt.toFormat("HH24:MI");
+  console.log(formatted);
+  sHour = formatted.split(":")[0]
+  sMin = formatted.split(":")[1]
+  // hour = Number(sHour) + 9
+  // if (hour >= 24) {
+  //   hour -= 24
+  // }
+  hour = sHour
+  min = sMin
+  console.log(`${hour} ${min}`);
+  set_timer = `${hour}:${min}:00`
+
+  query.select_timer_time(set_timer).then(function(ch_list){
     console.log(ch_list);
     ch_list.forEach(function(value){
       channel = client.channels.cache.get(value)
       channel.send(asa_message())
+      return true
     });
   });
-})
+
+  return false
+
+}
 
 function set_schedule(hour,min){
   try {
@@ -48,7 +67,11 @@ function set_schedule(hour,min){
       sHour += 24
     }
     sMin = min
-    morning.reschedule(`0 ${sMin} ${sHour} * * *`)
+    console.log(`set_schedule:${sHour} ${sMin}`)
+    timer = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
+      schedule_function()
+    })
+    timers << timer
   } 
   catch (error) {
     console.log("set_schedule error");
@@ -57,14 +80,54 @@ function set_schedule(hour,min){
   return true;
 }
 
-function show_schedule(){
+function active_schedule() {
 
-  hour = sHour + 9
-  if (hour >= 24) {
-    hour -= 24
-  }
-  min = sMin
-  return `${zeroPadding(hour,2)}:${zeroPadding(min,2)}`
+  return new Promise(function(resolve,reject){
+    try {
+      for(var timer of timers) {
+        timer.cancel();
+      }
+      // データ問合せ
+      query.select_ch_all().then(function(select){
+        console.log(`select_ch:${select}`);
+        channels = select
+        for (const channel of channels) {
+          query.select_timer_ch(channel).then(function(set_timers){
+            console.log(`select_timer:${set_timers}`);
+            for (const set_timer of set_timers) {
+              // スケジュールの設定
+              hour = set_timer.split(":")[0]
+              min = set_timer.split(":")[1]
+              console.log(`${hour} ${min}`);
+              (set_schedule(hour,min)) 
+            }
+          })
+        }
+        resolve(true)
+      })
+    }
+    catch(error) {
+      console.log(error)
+      reject(console.error)
+    }
+  })
+}
+
+function show_schedule(channel_ID){
+
+  return new Promise(function(resolve,reject){
+    // データ問合せ
+    try {
+      show_timers = []
+      query.select_timer_ch(channel_ID).then(function(set_timers){
+        resolve(set_timers)
+      })
+    }
+    catch(error) {
+      console.log(error)
+      reject(console.error)
+    }
+  })
 }
 
 function asa_message(x = null){
@@ -107,7 +170,12 @@ function asa_message(x = null){
 client.on('ready', message =>
 {
   client.user.setPresence({ game: { name: 'あさ' } });
-	console.log('bot is ready!');
+  console.log('bot is ready!');
+  var dt = new Date();
+  var formatted = dt.toFormat("HH24:MI");
+  console.log(formatted);
+
+  active_schedule();
 });
 
 // メッセージアクション
@@ -192,6 +260,7 @@ client.on('message', message =>
         hour = Number(hour);
         min = Number(min);
         if (Number.isInteger(hour) || Number.isInteger(min)) {
+          // 入力値の確認
           if ((hour >= 24 ) || ((hour < 0))) {
             message.channel.send("申し訳ないが存在しない時間を設定するのはNG")
             return;
@@ -200,12 +269,39 @@ client.on('message', message =>
             message.channel.send("申し訳ないが存在しない時間を設定するのはNG")
             return;
           } 
-          if (set_schedule(hour,min)) {
-            message.channel.send("ヨシ！")
-          }
-          else {
-            message.channel.send("おきのどくですが　ぼうけんのしょは　きえてしまいました")
-          }
+          set_timer = `${zeroPadding(hour,2)}:${zeroPadding(min,2)}:00`
+          // データ問合せ
+          query.select_timer(message.channel.id,set_timer).then(function(select){
+            console.log(select);
+            if (select == "False") {
+              query.insert_timer(message.channel.id,set_timer).then(function(insert){
+                if (insert == "True") {
+                  // スケジュールの設定
+                  active_schedule().then(function(chk_schedule_set){
+                    if (chk_schedule_set) {
+                      message.channel.send("ヨシ！")
+                    }
+                    else {
+                      message.channel.send("おきのどくですが　ぼうけんのしょは　きえてしまいました")
+                    }
+                  })
+                }
+                else if(insert == "False") {
+                  message.channel.send('誰もお前を愛さない')
+                }
+                else{
+                  message.channel.send(insert)
+                }
+              });
+            }
+            else if(select == "True") {
+              message.channel.send('しかしなにもおきなかった…')
+            }
+            else {
+              message.channel.send(select)
+            }
+          })
+
         }
         else{
           message.channel.send("エラーエラーエラー")
@@ -219,7 +315,18 @@ client.on('message', message =>
     // タイマー機能:時刻表示
     if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
     {
-      message.channel.send(`本日のあさは${show_schedule()}です`)
+      show_schedule(message.channel.id).then(function(show_timers){
+        show_message = ""
+        for(show_timer of show_timers){
+          show_message += (`${zeroPadding(show_timer.split(":")[0],2)}:${zeroPadding(show_timer.split(":")[1],2)}\n`)
+        }
+        if (show_timers.length > 0) {
+          message.channel.send(`本日のあさは\n${show_message}です`)
+        }
+        else {
+          message.channel.send(`よる`)
+        }
+      })
     }
   }
 });

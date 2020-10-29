@@ -4,6 +4,7 @@
   "description": "discord bot sample on Glitch",
   "main": "main.js",
   "dependencies": {
+    "date-utils": "^1.2.21",
     "discord.js": "latest",
     "node-cron": "^2.0.3",
     "node-schedule": "^1.3.2",
