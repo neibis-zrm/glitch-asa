@@ -38,11 +38,11 @@ function schedule_function(){
   console.log(formatted);
   sHour = formatted.split(":")[0]
   sMin = formatted.split(":")[1]
-  // hour = Number(sHour) + 9
-  // if (hour >= 24) {
-  //   hour -= 24
-  // }
-  hour = sHour
+  hour = Number(sHour) + 9
+  if (hour >= 24) {
+    hour -= 24
+  }
+  // hour = sHour
   min = sMin
   console.log(`${hour} ${min}`);
   set_timer = `${hour}:${min}:00`
