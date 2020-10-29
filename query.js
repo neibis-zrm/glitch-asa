@@ -45,6 +45,7 @@ function pg_connect(){
   });
   client.connect(function(err) {
     if (err) {
+      client.end()
       return console.error('could not connect to postgres', err);
     }
     else {
@@ -65,9 +66,11 @@ function select_ch_all(){
   return new Promise(function(resolve,reject){
     client.connect(function(err) {
       if (err) {
+        client.end()
         reject(console.error('could not connect to postgres', err));
       }
       else {
+        client.end()
         client.query(query_select_ch, function(err, result) {
           if (err) {
             reject(console.error('could not connect to postgres(query)', err));
@@ -81,6 +84,7 @@ function select_ch_all(){
               channels.push(num);
             }
             console.log(channels);
+            client.end()
             resolve(channels);
           }
         });
@@ -115,10 +119,12 @@ function select_ch(channel_ID){
               console.log("id:" + id);
               console.log("name:" + num);
               if (channel_ID == num) {
+                client.end()
                 resolve('True');
                 return;
               }
             }
+            client.end()
             resolve('False');
           }
         });
@@ -143,6 +149,7 @@ function insert_ch(channel_ID){
       else {
         client.query(query_insert_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(insert_query)', err));
           }
           else {
@@ -160,9 +167,11 @@ function insert_ch(channel_ID){
               console.log("id:" + id);
               console.log("name:" + num);
               if (channel_ID == num) {
+                client.end()
                 resolve('True');
               }
             }
+            client.end()
             resolve('False')
           }
         });
@@ -188,6 +197,7 @@ function delete_ch(channel_ID){
       else {
         client.query(query_delete_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(insert_query)', err));
           }
           else {
@@ -196,6 +206,7 @@ function delete_ch(channel_ID){
         });
         client.query(query_select_ch, function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(select_query)', err));
           }
           else {
@@ -205,9 +216,11 @@ function delete_ch(channel_ID){
               console.log("id:" + id);
               console.log("name:" + num);
               if (channel_ID == num) {
+                client.end()
                 resolve('False');
               }
             }
+            client.end()
             resolve('True')
           }
         });
@@ -320,10 +333,12 @@ function select_timer(channel_ID,set_timer){
               console.log("ch:" + ch);
               console.log("set_t:" + set_t);
               if (set_timer == set_t) {
+                client.end()
                 resolve('True');
                 return;
               }
             }
+            client.end()
             resolve('False');
           }
         });
@@ -348,7 +363,7 @@ function insert_timer(channel_ID,set_timer){
       else {
         client.query(query_insert_timer(channel_ID,set_timer), function(err, result) {
           if (err) {
-            console.log(query_insert_timer(channel_ID,set_timer))
+            client.end()
             reject(console.error('could not connect to postgres(insert_query)', err));
           }
           else {
@@ -357,6 +372,7 @@ function insert_timer(channel_ID,set_timer){
         });
         client.query(query_select_timer_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(select_query)', err));
           }
           else {
@@ -369,9 +385,11 @@ function insert_timer(channel_ID,set_timer){
               console.log("ch:" + ch);
               console.log("set_t:" + set_t);
               if (set_timer == set_t) {
+                client.end()
                 resolve('True');
               }
             }
+            client.end()
             resolve('False')
           }
         });
@@ -396,6 +414,7 @@ function delete_timer(channel_ID,set_timer){
       else {
         client.query(query_delete_timer(channel_ID,set_timer), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(insert_query)', err));
           }
           else {
@@ -404,6 +423,7 @@ function delete_timer(channel_ID,set_timer){
         });
         client.query(query_select_timer_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(select_query)', err));
           }
           else {
@@ -415,9 +435,11 @@ function delete_timer(channel_ID,set_timer){
               console.log("ch:" + ch);
               console.log("set_t:" + set_t);
               if (set_timer == set_t) {
+                client.end()
                 resolve('False');
               }
             }
+            client.end()
             resolve('True')
           }
         });
