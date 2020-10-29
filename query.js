@@ -45,7 +45,6 @@ function pg_connect(){
   });
   client.connect(function(err) {
     if (err) {
-      client.end()
       return console.error('could not connect to postgres', err);
     }
     else {
@@ -70,9 +69,9 @@ function select_ch_all(){
         reject(console.error('could not connect to postgres', err));
       }
       else {
-        client.end()
         client.query(query_select_ch, function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(query)', err));
           }
           else {
@@ -110,6 +109,7 @@ function select_ch(channel_ID){
         // 設定状態を確認
         client.query(query_select_ch, function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(query)', err));
           }
           else {
@@ -158,6 +158,7 @@ function insert_ch(channel_ID){
         });
         client.query(query_select_ch, function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(select_query)', err));
           }
           else {
@@ -246,6 +247,7 @@ function select_timer_ch(channel_ID){
       else {
         client.query(query_select_timer_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(query)', err));
           }
           else {
@@ -259,6 +261,7 @@ function select_timer_ch(channel_ID){
               timers.push(set_t);
             }
             console.log(timers);
+            client.end()
             resolve(timers);
           }
         });
@@ -284,6 +287,7 @@ function select_timer_time(set_timer){
       else {
         client.query(query_select_timer_timer(set_timer), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(query)', err));
           }
           else {
@@ -297,6 +301,7 @@ function select_timer_time(set_timer){
               channels.push(ch);
             }
             console.log(channels);
+            client.end()
             resolve(channels);
           }
         });
@@ -322,6 +327,7 @@ function select_timer(channel_ID,set_timer){
         // 設定状態を確認
         client.query(query_select_timer_ch(channel_ID), function(err, result) {
           if (err) {
+            client.end()
             reject(console.error('could not connect to postgres(query)', err));
           }
           else {
