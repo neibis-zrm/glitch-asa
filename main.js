@@ -144,7 +144,7 @@ client.on('message', message =>
       }
     }
     // タイマー機能:チャンネル設定
-    if(message.content.startsWith("!asa-ch-set"))
+    if(message.content("!asa-ch-set"))
     {
       query.select_ch(message.channel.id).then(function(select){
         console.log(select);
@@ -170,7 +170,7 @@ client.on('message', message =>
       })
     }
     // タイマー機能:チャンネル設定解除
-    if(message.content.startsWith("!asa-ch-remove"))
+    if(message.content("!asa-ch-remove"))
     {
       query.select_ch(message.channel.id).then(function(select){
         console.log(select);
@@ -231,7 +231,17 @@ client.on('message', message =>
               });
             }
             else if(select == "True") {
-              message.channel.send('しかしなにもおきなかった…')
+              query.delete_timer(message.channel.id,set_timer).then(function(del){
+                if (del == "True") {
+                  message.channel.send("どうして・・・")
+                }
+                else if(del == "False") {
+                  message.channel.send('誰もお前を愛さない')
+                }
+                else{
+                  message.channel.send(del)
+                }
+              });
             }
             else {
               message.channel.send(select)
@@ -249,7 +259,7 @@ client.on('message', message =>
       }
     }
     // タイマー機能:時刻表示
-    if(message.content.startsWith("!asa-timer-show") && (message.content.split(" ")[0] == "!asa-timer-show"))
+    if(message.content("!asa-timer-show"))
     {
       show_schedule(message.channel.id).then(function(show_timers){
         show_message = ""
