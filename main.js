@@ -24,11 +24,9 @@ function zeroPadding(NUM, LEN){
 	return ( Array(LEN).join('0') + NUM ).slice( -LEN );
 }
 
-// var morning = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
-//   const channel = client.channels.cache.get(asa_ch)
-//   // console.log(`${sMin} ${sHour}`)
-//   channel.send(asa_message())
-// })
+var morning = schedule.scheduleJob(`0 * * * * *`, function(){
+  schedule_function()
+})
 
 function schedule_function(){
   channels = []
@@ -58,59 +56,6 @@ function schedule_function(){
 
   return false
 
-}
-
-function set_schedule(hour,min){
-  try {
-    sHour = hour - 9
-    if (sHour < 0) {
-      sHour += 24
-    }
-    sMin = min
-    console.log(`set_schedule:${sHour} ${sMin}`)
-    timer = schedule.scheduleJob(`0 ${sMin} ${sHour} * * *`, function(){
-      schedule_function()
-    })
-    timers << timer
-  } 
-  catch (error) {
-    console.log("set_schedule error");
-    return false;
-  }
-  return true;
-}
-
-function active_schedule() {
-
-  return new Promise(function(resolve,reject){
-    try {
-      for(var timer of timers) {
-        timer.cancel();
-      }
-      // データ問合せ
-      query.select_ch_all().then(function(select){
-        console.log(`select_ch:${select}`);
-        channels = select
-        for (const channel of channels) {
-          query.select_timer_ch(channel).then(function(set_timers){
-            console.log(`select_timer:${set_timers}`);
-            for (const set_timer of set_timers) {
-              // スケジュールの設定
-              hour = set_timer.split(":")[0]
-              min = set_timer.split(":")[1]
-              console.log(`${hour} ${min}`);
-              (set_schedule(hour,min)) 
-            }
-          })
-        }
-        resolve(true)
-      })
-    }
-    catch(error) {
-      console.log(error)
-      reject(console.error)
-    }
-  })
 }
 
 function show_schedule(channel_ID){
@@ -175,7 +120,6 @@ client.on('ready', message =>
   var formatted = dt.toFormat("HH24:MI");
   console.log(formatted);
 
-  active_schedule();
 });
 
 // メッセージアクション
@@ -276,15 +220,7 @@ client.on('message', message =>
             if (select == "False") {
               query.insert_timer(message.channel.id,set_timer).then(function(insert){
                 if (insert == "True") {
-                  // スケジュールの設定
-                  active_schedule().then(function(chk_schedule_set){
-                    if (chk_schedule_set) {
-                      message.channel.send("ヨシ！")
-                    }
-                    else {
-                      message.channel.send("おきのどくですが　ぼうけんのしょは　きえてしまいました")
-                    }
-                  })
+                  message.channel.send("ヨシ！")
                 }
                 else if(insert == "False") {
                   message.channel.send('誰もお前を愛さない')

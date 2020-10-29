@@ -286,6 +286,7 @@ function select_timer_time(set_timer){
       }
       else {
         client.query(query_select_timer_timer(set_timer), function(err, result) {
+          console.log(query_select_timer_timer(set_timer))
           if (err) {
             client.end()
             reject(console.error('could not connect to postgres(query)', err));
