@@ -86,6 +86,7 @@ function asa_message(x = null){
   const genbaneko_emoji = client.emojis.cache.find(emoji => emoji.name === "genbaneko" );
   const aka_emoji = client.emojis.cache.find(emoji => emoji.name === "CCCP" );
   const smo_emoji = client.emojis.cache.find(emoji => emoji.name === "emoji_21" );
+  const cyno_emoji = client.emojis.cache.find(emoji => emoji.name === "CovCyno");
   
   console.log(x);
   if (x <= 30) {
@@ -95,12 +96,18 @@ function asa_message(x = null){
     return `${a_emoji.toString()}${sa_emoji.toString()}`
   }
   else if (x <= 70) {
-    return `ASA${sa_emoji.toString()}...`
-  }
-  else if (x <= 85) {
     return `あさ${genbaneko_emoji.toString()}`
   }
-  else if (x <= 95) {
+  else if (x <= 80) {
+    return `あさ\n\nさむ`
+  }
+  else if (x <= 85) {
+    return `${sa_emoji.toString()}${sa_emoji.toString()}${sa_emoji.toString()}${sa_emoji.toString()}${sa_emoji.toString()}${cyno_emoji.toString()}`
+  }
+  else if (x <= 87) {
+    return `${sa_emoji.toString()}${sa_emoji.toString()}${cyno_emoji.toString()}${a_emoji.toString()}${genbaneko_emoji.toString()}${a_emoji.toString()}${a_emoji.toString()}${a_emoji.toString()}${a_emoji.toString()}${a_emoji.toString()}`
+  }
+  else if (x <= 97) {
     return `${aka_emoji.toString()}`
   }
   else if (x <= 100) {
